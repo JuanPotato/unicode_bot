@@ -1,6 +1,5 @@
 #![feature(plugin)]
 #![plugin(phf_macros)]
-#![plugin(clippy)]
 
 extern crate phf;
 
@@ -8,25 +7,32 @@ mod unicode;
 use unicode::UNICODE;
 
 fn main() {
-    do_a_thing("🤷‍♀️");
-    do_a_thing("🥔");
-    do_a_thing("🤷");
-    do_a_thing("👊👊🏻");
-    do_a_thing("🤷‍♂");
-    do_a_thing("👨🏻‍💻");
+    println!("{}", get_char_names(" 🤳"));
 }
 
-fn do_a_thing(string: &str) {
-    let aa = string.chars().map(|c|
-        UNICODE.get(format!("{:0>4X}", c as u32).as_str())
+fn get_char_names(string: &str) -> String {
+    let unk = "UNKNOWN CHARACTER";
+    let char_names = string.chars().map(|c|
+        UNICODE.get(&(c as u32)).unwrap_or(&unk)
     );
 
-    let mut msg = String::new();
+    join_string(char_names, "\n")
+}
 
-    for a in aa {
-        msg.push_str(a.unwrap_or(&"UNKNOWN CHARACTER"));
-        msg.push_str("\n");
+
+fn join_string<'a, I>(mut set: I, del: &str) -> String
+        where I: Iterator<Item=&'a&'a str> {
+
+    let (lower, _) = set.size_hint();
+
+    let mut text = String::with_capacity((3 + del.len()) * lower);
+
+    text.push_str(set.next().unwrap());
+
+    for string in set {
+        text.push_str(del);
+        text.push_str(string);
     }
 
-    println!("{}", msg);
+    text
 }
