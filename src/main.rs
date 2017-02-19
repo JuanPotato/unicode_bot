@@ -11,27 +11,23 @@ fn main() {
 }
 
 fn get_char_names(string: &str) -> String {
-    let unk = "UNKNOWN CHARACTER";
-    let char_names = string.chars().map(|c|
-        UNICODE.get(&(c as u32)).unwrap_or(&unk)
-    );
+    let unknown = "UNKNOWN CHARACTER";
+    let mut chars = string.chars();
+        
+    let (lower, _) = chars.size_hint();
+    let mut text = String::with_capacity(4 * lower);
+    // 3 for "\n" + 3 is the lowest the name could be
 
-    join_string(char_names, "\n")
-}
-
-
-fn join_string<'a, I>(mut set: I, del: &str) -> String
-        where I: Iterator<Item=&'a&'a str> {
-
-    let (lower, _) = set.size_hint();
-
-    let mut text = String::with_capacity((3 + del.len()) * lower);
-
-    text.push_str(set.next().unwrap());
-
-    for string in set {
-        text.push_str(del);
-        text.push_str(string);
+    text.push_str(UNICODE.get(&(chars.next().unwrap() as u32)).unwrap_or(&unknown));
+ 
+    for c in chars {
+        text.push_str("\n");
+        text.push_str(
+            match UNICODE.get(&(c as u32)) {
+                Some(text) => text,
+                None => "UNKNOWN CHARACTER",
+            }
+        );
     }
 
     text

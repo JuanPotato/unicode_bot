@@ -2,7 +2,7 @@ extern crate phf;
 
 // Unicode 9.0
 
-pub static UNICODE: phf::Map<char, &'static str> = phf_map! {
+pub static UNICODE: phf::Map<u32, &'static str> = phf_map! {
     0x0000u32 => "<control>",
     0x0001u32 => "<control>",
     0x0002u32 => "<control>",
