@@ -6,3 +6,4 @@ authors = ["Juan Potato <hasantiny@gmail.com>"]
 [dependencies]
 phf = "0.7.21"
 phf_macros = "0.7.21"
+tg_botapi = "0.2"
