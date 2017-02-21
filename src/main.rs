@@ -17,7 +17,6 @@ mod unicode;
 use unicode::UNICODE;
 
 
-
 fn main() {
     let token = &env::var("TOKEN")
         .expect("No bot token provided, please set the environment variable TOKEN");
@@ -59,7 +58,6 @@ fn main() {
 }
 
 fn get_char_names(string: &str) -> String {
-    let unknown = "UNKNOWN CHARACTER";
     let mut chars = string.chars();
         
     let (lower, _) = chars.size_hint();
@@ -75,8 +73,7 @@ fn get_char_names(string: &str) -> String {
 
     let first_c = chars.next().unwrap() as u32;
     let _ = write!(text, "[{}](http://unic.gq/{:X})", 
-        UNICODE.get(&first_c).unwrap_or(&unknown),
-        first_c);
+        get_name(first_c), first_c);
 
     for c in chars {
         if text.len() >= 3800 {
@@ -84,11 +81,36 @@ fn get_char_names(string: &str) -> String {
             break;
         } else {
             let _ = write!(text, "\n[{}](http://unic.gq/{:X})", 
-                UNICODE.get(&(c as u32)).unwrap_or(&unknown),
-                c as u32);
+                get_name(c as u32), c as u32);
         }
     }
 
     text
 }
+
+fn get_name(c: u32) -> &'static str {
+    match UNICODE.get(&c) {
+        Some(s) => s,
+        None => {
+            match c {
+                0x3400   ... 0x4DB5   => "CJK Ideograph Extension A",
+                0x4E00   ... 0x9FD5   => "CJK Ideograph",
+                0xAC00   ... 0xD7A3   => "Hangul Syllable",
+                0xD800   ... 0xDB7F   => "Non Private Use High Surrogate",
+                0xDB80   ... 0xDBFF   => "Private Use High Surrogate",
+                0xDC00   ... 0xDFFF   => "Low Surrogate",
+                0xE000   ... 0xF8FF   => "Private Use",
+                0x17000  ... 0x187EC  => "Tangut Ideograph",
+                0x20000  ... 0x2A6D6  => "CJK Ideograph Extension B",
+                0x2A700  ... 0x2B734  => "CJK Ideograph Extension C",
+                0x2B740  ... 0x2B81D  => "CJK Ideograph Extension D",
+                0x2B820  ... 0x2CEA1  => "CJK Ideograph Extension E",
+                0xF0000  ... 0xFFFFD  => "Plane 15 Private Use",
+                0x100000 ... 0x10FFFD => "Plane 16 Private Use",
+                                    _ => "UNKNOWN CHARACTER",
+            }
+        }
+    }
+}
+
 
