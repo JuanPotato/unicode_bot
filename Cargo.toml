@@ -1,9 +1,14 @@
 [package]
 name = "unicode_bot"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Juan Potato <hasantiny@gmail.com>"]
 
 [dependencies]
-phf = "0.7.21"
-phf_macros = "0.7.21"
-tg_botapi = "0.2"
+phf = "0.7.22"
+telegram-bot = "0.6.1"
+failure = "0.1.1"
+tokio-core = "0.1"
+futures = "0.1"
+
+[build-dependencies]
+phf_codegen = "0.7.21"
