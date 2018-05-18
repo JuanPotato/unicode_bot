@@ -6,7 +6,7 @@ extern crate telegram_bot;
 extern crate tokio_core;
 //extern crate failure;
 extern crate futures;
-extern crate phf;
+extern crate charname;
 
 use telegram_bot::{
     Api,
@@ -25,8 +25,7 @@ use futures::stream::Stream;
 use std::fmt::Write;
 use std::env;
 
-mod unicode;
-use unicode::get_name;
+use charname::get_name;
 
 
 fn main() {

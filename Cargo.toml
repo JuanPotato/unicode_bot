@@ -4,11 +4,9 @@ version = "0.2.0"
 authors = ["Juan Potato <hasantiny@gmail.com>"]
 
 [dependencies]
-phf = "0.7.22"
-telegram-bot = "0.6.1"
-failure = "0.1.1"
+charname = "0.1.0"
+telegram-bot = "0.6"
+failure = "0.1"
 tokio-core = "0.1"
 futures = "0.1"
 
-[build-dependencies]
-phf_codegen = "0.7.21"
