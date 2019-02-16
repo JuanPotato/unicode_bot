@@ -2,11 +2,10 @@
 name = "unicode_bot"
 version = "0.2.0"
 authors = ["Juan Potato <hasantiny@gmail.com>"]
+edition = "2018"
 
 [dependencies]
 charname = "0.1.0"
-telegram-bot = "0.6"
-failure = "0.1"
+telegram-bot-fork = "0.7"
 tokio-core = "0.1"
 futures = "0.1"
-

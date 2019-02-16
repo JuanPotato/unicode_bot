@@ -2,16 +2,11 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-extern crate charname;
-extern crate futures;
-extern crate telegram_bot;
-extern crate tokio_core;
-
 use charname::get_name;
 
 use futures::stream::Stream;
 
-use telegram_bot::{Api, CanReplySendMessage, MessageKind, ParseMode, UpdateKind};
+use telegram_bot_fork::{Api, CanReplySendMessage, MessageKind, ParseMode, UpdateKind};
 
 use tokio_core::reactor::Core;
 
@@ -22,7 +17,7 @@ fn main() {
     let mut core = Core::new().unwrap();
 
     let token = env::var("TOKEN").unwrap();
-    let api = Api::configure(token).build(core.handle()).unwrap();
+    let api = Api::new(token).unwrap();
 
     let future = api.stream().for_each(|update| {
         if let UpdateKind::Message(message) = update.kind {
@@ -33,6 +28,17 @@ fn main() {
                         .parse_mode(ParseMode::Markdown)
                         .disable_preview(),
                 );
+            }
+
+            if let MessageKind::Photo { ref caption, .. } = message.kind {
+                if let Some(data) = caption {
+                    api.spawn(
+                        message
+                            .text_reply(get_char_names(data))
+                            .parse_mode(ParseMode::Markdown)
+                            .disable_preview(),
+                    );
+                }
             }
         }
 
