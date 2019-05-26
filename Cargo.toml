@@ -5,7 +5,8 @@ authors = ["Juan Potato <hasantiny@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-charname = "0.1.0"
-telegram-bot-fork = "0.7"
-tokio-core = "0.1"
-futures = "0.1"
+reqwest = { version = "0.9", features = ["trust-dns"] }
+tokio = "0.1"
+futures-preview = { version = "0.3.0-alpha.16", features = ["compat"] }
+charname = "0.1.2"
+tg_botapi = "0.6.0-alpha.0"
