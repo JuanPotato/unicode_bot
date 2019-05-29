@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #![feature(async_await)]
+
 use futures::{FutureExt, StreamExt, TryFutureExt};
 
 use tg_botapi::methods::{AnswerInlineQuery, SendMessage};
@@ -12,15 +13,29 @@ use tg_botapi::types::{
 };
 use tg_botapi::Bot;
 
+use serde_derive::{Serialize, Deserialize};
 use std::fmt::Write;
+use std::fs::File;
+use std::io::Read;
 
-fn main() {
-    let token = "210382785:AAEk4K8dZcGmCU-REWTR0sGEFuaNltu4CWk";
-
-    tokio::run(run_bot(token).boxed().unit_error().compat());
+#[derive(Serialize, Deserialize)]
+struct Config {
+    token: String
 }
 
-async fn run_bot(token: &str) {
+fn main() {
+    let mut config_file = File::open("bot.toml")
+        .expect("Could not find config file bot.toml.");
+
+    let mut config_contents = String::new();
+    config_file.read_to_string(&mut config_contents).expect("Could not read config file");
+
+    let config: Config = toml::from_str(&config_contents).expect("Could not parse config file");
+
+    tokio::run(run_bot(config.token).boxed().unit_error().compat());
+}
+
+async fn run_bot(token: impl Into<String>) {
     let bot = Bot::new(token);
 
     let mut updates = bot.start_polling();
@@ -57,7 +72,7 @@ async fn handle_message(bot: Bot, msg: Message) {
             return;
         }
 
-        let mut req = SendMessage::new(msg.chat.id, get_char_names(msg_text.unwrap()));
+        let mut req = SendMessage::new(msg.chat.id, get_char_names(msg_text.unwrap()).0);
         req.parse_mode = ParseMode::Markdown;
         req.disable_web_page_preview = Some(true);
 
@@ -72,21 +87,28 @@ async fn handle_inline_query(bot: Bot, query: InlineQuery) {
 
     let mut response = AnswerInlineQuery::new(query.id, Vec::new());
 
-    let mut content: InputTextMessageContent = get_char_names(&query.query).into();
+    let (char_names, cache) = get_char_names(&query.query);
+    let mut content: InputTextMessageContent = char_names.into();
     content.parse_mode = ParseMode::Markdown;
 
     response.add(InlineQueryResultArticle::new("ID", query.query, content));
-    response.cache_time = Some(0);
+
+    response.cache_time = Some(if cache { 24 * 60 * 60 } else { 60 });
+
     response.is_personal = Some(false);
 
     bot.send(&response).await.unwrap();
 }
 
-fn get_char_names(string: &str) -> String {
+fn get_char_names(string: &str) -> (String, bool) {
     let mut text = String::with_capacity(4096); // max telegram message length
+    let mut cache = true;
 
     for (i, c) in string.chars().enumerate() {
-        let name = charname::get_name(c as u32);
+        let name = charname::get_name_checked(c as u32).unwrap_or_else(|| {
+            cache = false;
+            "UNKNOWN CHARACTER"
+        });
 
         let new_part = format!(
             "`U+{val:04X}` [{}](http://www.fileformat.info/info/unicode/char/{val:X})\n",
@@ -94,6 +116,7 @@ fn get_char_names(string: &str) -> String {
             val = c as u32
         );
 
+        // Don't want to exceed message limit or message entity limit
         if text.len() + new_part.len() >= 3900 || i >= 50 {
             write!(
                 text,
@@ -106,5 +129,5 @@ fn get_char_names(string: &str) -> String {
         }
     }
 
-    text
+    (text, cache)
 }
