@@ -6,7 +6,8 @@ This is a neat little telegram bot that I made that tells you all the characters
 
 Commands
  - [x] Send any text and it will tell you the characters in it
- - [ ] `/start, /help` - Tells the user about what the bot can do
+ - [x] `/about, /start` - Tells the user about what the bot can do
+ - [x] `/help` - Show a list of commands
  - [ ] `/raw` - Reply to messages that were parsed as commands to get the characters in them
  - [ ] `/full` - Reply to messages that are moret than 50 characters and you'll get a txt file
                  that has the entire character list. Will limit to 4096 chars or something.     
