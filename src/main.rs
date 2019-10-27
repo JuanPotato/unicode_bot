@@ -2,7 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-use std::fmt::Write;
 use std::fs::File;
 use std::io::Read;
 
@@ -126,21 +125,17 @@ fn get_char_names(string: &str) -> String {
         let name = charname::get_name(c as u32);
 
         let new_part = format!(
-            "`U+{val:04X}` [{}](http://www.fileformat.info/info/unicode/char/{val:X})\n",
+            "`U+{val:04X}` [{}](http://unic.gq/{val:X})\n",
             name,
             val = c as u32
         );
 
         // Don't want to exceed message limit or message entity limit
-        if text.len() + new_part.len() >= 3900 || i >= 50 {
-            write!(
-                text,
-                "\nYour mesage has been truncated because it was too big"
-            )
-                .unwrap();
+        if text.len() + new_part.len() >= 4000 || i >= 50 {
+            text.push_str("\nYour mesage has been truncated because it was too big");
             break;
         } else {
-            write!(text, "{}", new_part).unwrap();
+            text.push_str(&new_part);
         }
     }
 
