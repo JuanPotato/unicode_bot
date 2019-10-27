@@ -16,6 +16,8 @@ use tg_botapi::types::{
     UpdateType,
 };
 
+mod messages;
+
 #[derive(Serialize, Deserialize)]
 struct Config {
     token: String
@@ -84,17 +86,38 @@ async fn run_bot(token: String) {
 
 async fn handle_message(bot: Bot, msg: Message) {
     if msg.chat.chat_type == ChatType::Private {
-        let msg_text = msg.get_text();
+        let msg_text = match msg.get_text() {
+            Some(text) => text,
+            None => return,
+        };
 
-        if msg_text.is_none() {
-            return;
+        let msg_parts = msg_text.split_whitespace().collect::<Vec<&str>>();
+
+        match msg_parts[0] {
+            "/start" | "/about" => {
+                let mut req = SendMessage::new(msg.chat.id, messages::ABOUT_MESSAGE);
+                req.parse_mode = ParseMode::Markdown;
+                req.disable_web_page_preview = Some(true);
+
+                bot.send(&req).await.unwrap();
+            }
+
+            "/help" => {
+                let mut req = SendMessage::new(msg.chat.id, messages::HELP_MESSAGE);
+                req.parse_mode = ParseMode::Markdown;
+                req.disable_web_page_preview = Some(true);
+
+                bot.send(&req).await.unwrap();
+            }
+
+            _ => {
+                let mut req = SendMessage::new(msg.chat.id, get_char_names(msg_text));
+                req.parse_mode = ParseMode::Markdown;
+                req.disable_web_page_preview = Some(true);
+
+                bot.send(&req).await.unwrap();
+            }
         }
-
-        let mut req = SendMessage::new(msg.chat.id, get_char_names(msg_text.unwrap()));
-        req.parse_mode = ParseMode::Markdown;
-        req.disable_web_page_preview = Some(true);
-
-        bot.send(&req).await.unwrap();
     }
 }
 
