@@ -2,37 +2,56 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#![feature(async_await)]
+use std::fmt::Write;
+use std::fs::File;
+use std::io::Read;
 
 use futures::{FutureExt, StreamExt, TryFutureExt};
-
+use quicli::prelude::CliResult;
+use serde_derive::{Deserialize, Serialize};
+use structopt::StructOpt;
+use tg_botapi::Bot;
 use tg_botapi::methods::{AnswerInlineQuery, SendMessage};
 use tg_botapi::types::{
     ChatType, InlineQuery, InlineQueryResultArticle, InputTextMessageContent, Message, ParseMode,
     UpdateType,
 };
-use tg_botapi::Bot;
-
-use serde_derive::{Serialize, Deserialize};
-use std::fmt::Write;
-use std::fs::File;
-use std::io::Read;
 
 #[derive(Serialize, Deserialize)]
 struct Config {
     token: String
 }
 
-fn main() {
-    let mut config_file = File::open("bot.toml")
-        .expect("Could not find config file bot.toml.");
+#[derive(Debug, StructOpt)]
+struct CliArgs {
+    /// Telegram bot api token to use
+    #[structopt(long = "token", short = "t", required_unless = "config_file")]
+    token: Option<String>,
 
-    let mut config_contents = String::new();
-    config_file.read_to_string(&mut config_contents).expect("Could not read config file");
+    /// Config file that holds the token in toml format
+    #[structopt(long = "config", short = "c", conflicts_with = "token")]
+    config_file: Option<String>,
+}
 
-    let config: Config = toml::from_str(&config_contents).expect("Could not parse config file");
+fn main() -> CliResult {
+    let args = CliArgs::from_args();
 
-    tokio::run(run_bot(config.token).boxed().unit_error().compat());
+    let token = if args.token.is_some() {
+        args.token.unwrap()
+    } else {
+        let mut config_file = File::open(args.config_file.unwrap())
+            .expect("Could not open config file");
+
+        let mut config_contents = String::new();
+        config_file.read_to_string(&mut config_contents).expect("Could not read config file");
+
+        let config: Config = toml::from_str(&config_contents).expect("Could not parse config file");
+
+        config.token
+    };
+
+    tokio::run(run_bot(token).boxed().unit_error().compat());
+    Ok(())
 }
 
 async fn run_bot(token: impl Into<String>) {
@@ -45,19 +64,19 @@ async fn run_bot(token: impl Into<String>) {
             UpdateType::Message(message) => {
                 tokio::spawn(
                     handle_message(bot.clone(), message)
-                        .boxed()
-                        .unit_error()
-                        .compat(),
-                );
+                    .boxed()
+                    .unit_error()
+                    .compat(),
+                    );
             }
 
             UpdateType::InlineQuery(query) => {
                 tokio::spawn(
                     handle_inline_query(bot.clone(), query)
-                        .boxed()
-                        .unit_error()
-                        .compat(),
-                );
+                    .boxed()
+                    .unit_error()
+                    .compat(),
+                    );
             }
             _ => {}
         }
@@ -122,7 +141,7 @@ fn get_char_names(string: &str) -> (String, bool) {
                 text,
                 "\nYour mesage has been truncated because it was too big"
             )
-            .unwrap();
+                .unwrap();
             break;
         } else {
             write!(text, "{}", new_part).unwrap();
