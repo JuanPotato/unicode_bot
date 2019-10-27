@@ -91,7 +91,7 @@ async fn handle_message(bot: Bot, msg: Message) {
             return;
         }
 
-        let mut req = SendMessage::new(msg.chat.id, get_char_names(msg_text.unwrap()).0);
+        let mut req = SendMessage::new(msg.chat.id, get_char_names(msg_text.unwrap()));
         req.parse_mode = ParseMode::Markdown;
         req.disable_web_page_preview = Some(true);
 
@@ -106,28 +106,24 @@ async fn handle_inline_query(bot: Bot, query: InlineQuery) {
 
     let mut response = AnswerInlineQuery::new(query.id, Vec::new());
 
-    let (char_names, cache) = get_char_names(&query.query);
+    let char_names = get_char_names(&query.query);
     let mut content: InputTextMessageContent = char_names.into();
     content.parse_mode = ParseMode::Markdown;
 
     response.add(InlineQueryResultArticle::new("ID", query.query, content));
 
-    response.cache_time = Some(if cache { 24 * 60 * 60 } else { 60 });
+    response.cache_time = Some(0);
 
     response.is_personal = Some(false);
 
     bot.send(&response).await.unwrap();
 }
 
-fn get_char_names(string: &str) -> (String, bool) {
+fn get_char_names(string: &str) -> String {
     let mut text = String::with_capacity(4096); // max telegram message length
-    let mut cache = true;
 
     for (i, c) in string.chars().enumerate() {
-        let name = charname::get_name_checked(c as u32).unwrap_or_else(|| {
-            cache = false;
-            "UNKNOWN CHARACTER"
-        });
+        let name = charname::get_name(c as u32);
 
         let new_part = format!(
             "`U+{val:04X}` [{}](http://www.fileformat.info/info/unicode/char/{val:X})\n",
@@ -148,5 +144,5 @@ fn get_char_names(string: &str) -> (String, bool) {
         }
     }
 
-    (text, cache)
+    text
 }
