@@ -54,7 +54,7 @@ fn main() -> CliResult {
     Ok(())
 }
 
-async fn run_bot(token: impl Into<String>) {
+async fn run_bot(token: String) {
     let bot = Bot::new(token);
 
     let mut updates = bot.start_polling();
