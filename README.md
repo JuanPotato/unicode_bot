@@ -1,4 +1,4 @@
-## Unicode Info Bot ([@UnicodeInfoBot](t.me/UnicodeInfoBot))
+## Unicode Info Bot ([@UnicodeInfoBot](https://t.me/UnicodeInfoBot))
 
 This is a neat little telegram bot that I made that tells you all the characters in your message.
 
