@@ -5,8 +5,7 @@
 use std::fs::File;
 use std::io::Read;
 
-use futures::{FutureExt, StreamExt, TryFutureExt};
-use quicli::prelude::CliResult;
+use futures::StreamExt;
 use serde_derive::{Deserialize, Serialize};
 use structopt::StructOpt;
 use tg_botapi::Bot;
@@ -34,7 +33,8 @@ struct CliArgs {
     config_file: Option<String>,
 }
 
-fn main() -> CliResult {
+#[tokio::main]
+async fn main() {
     let args = CliArgs::from_args();
 
     let token = if args.token.is_some() {
@@ -51,8 +51,7 @@ fn main() -> CliResult {
         config.token
     };
 
-    tokio::run(run_bot(token).boxed().unit_error().compat());
-    Ok(())
+    run_bot(token).await;
 }
 
 async fn run_bot(token: String) {
@@ -63,21 +62,11 @@ async fn run_bot(token: String) {
     while let Some(update) = updates.next().await {
         match update.update_type {
             UpdateType::Message(message) => {
-                tokio::spawn(
-                    handle_message(bot.clone(), message)
-                    .boxed()
-                    .unit_error()
-                    .compat(),
-                    );
+                tokio::spawn(handle_message(bot.clone(), message));
             }
 
             UpdateType::InlineQuery(query) => {
-                tokio::spawn(
-                    handle_inline_query(bot.clone(), query)
-                    .boxed()
-                    .unit_error()
-                    .compat(),
-                    );
+                tokio::spawn(handle_inline_query(bot.clone(), query));
             }
             _ => {}
         }
@@ -148,7 +137,8 @@ fn get_char_names(string: &str) -> String {
         let name = charname::get_name(c as u32);
 
         let new_part = format!(
-            "`U+{val:04X}` [{}](http://unic.gq/{val:X})\n",
+            "`U+{val:04X}` [{}](https://fileformat.info/info/unicode/char/{val:X})\n",
+
             name,
             val = c as u32
         );

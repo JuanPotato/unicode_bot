@@ -5,10 +5,10 @@ authors = ["Hasan Ibraheem <hasantiny@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-tokio = "0.1"
-futures-preview = { version = "0.3.0-alpha.16", features = ["compat"] }
-charname = "0.2"
-tg_botapi = "0.6.0-alpha.1"
+tokio = { version = "0.2.5", features = ["rt-core", "rt-threaded", "macros"] }
+futures = "0.3.0"
+charname = "0.2.1"
+tg_botapi = "0.6.0"
 toml = "0.5"
 serde = "1.0"
 serde_derive = "1.0"
