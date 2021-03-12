@@ -10,10 +10,7 @@ use serde_derive::{Deserialize, Serialize};
 use structopt::StructOpt;
 use tg_botapi::Bot;
 use tg_botapi::methods::{AnswerInlineQuery, SendMessage};
-use tg_botapi::types::{
-    ChatType, InlineQuery, InlineQueryResultArticle, InputTextMessageContent, Message, ParseMode,
-    UpdateType,
-};
+use tg_botapi::types::{ChatType, InlineQuery, InlineQueryResultArticle, InputTextMessageContent, Message, ParseMode, UpdateType};
 
 mod messages;
 
@@ -138,7 +135,6 @@ fn get_char_names(string: &str) -> String {
 
         let new_part = format!(
             "`U+{val:04X}` [{}](https://fileformat.info/info/unicode/char/{val:X})\n",
-
             name,
             val = c as u32
         );
