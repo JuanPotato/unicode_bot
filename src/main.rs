@@ -96,6 +96,19 @@ async fn handle_message(bot: Bot, msg: Message) {
                 bot.send(&req).await.unwrap();
             }
 
+            // Reply to a message that was interpreted as a command to get its breakdown
+            "/raw" => {
+                if let Some(reply) = msg.reply_to_message {
+                    if let Some(reply_text) = reply.get_text() {
+                        let mut req = SendMessage::new(msg.chat.id, get_char_names(reply_text));
+                        req.parse_mode = ParseMode::Markdown;
+                        req.disable_web_page_preview = Some(true);
+
+                        bot.send(&req).await.unwrap();
+                    }
+                }
+            }
+
             _ => {
                 let mut req = SendMessage::new(msg.chat.id, get_char_names(msg_text));
                 req.parse_mode = ParseMode::Markdown;
