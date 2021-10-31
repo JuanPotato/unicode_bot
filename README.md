@@ -9,9 +9,9 @@ Commands
  - [x] `/about, /start` - Tells the user about what the bot can do
  - [x] `/help` - Show a list of commands
  - [x] `/raw` - Reply to messages that were parsed as commands to get the characters in them
- - [ ] `/full` - Reply to messages that are moret than 50 characters and you'll get a txt file
-                 that has the entire character list. Will limit to 4096 chars or something.     
+ - [x] `/filter` - Ignore specified characters. Reply with `/filter` and then a list of characters
+                   that you don't want: `/filter abcdefghij`. Case sensitive
+ - [x] `/codepoint <codepoint>` - Returns the character at the specified codepoint.
+ - [ ] `/full` - Reply to messages that has more than 50 characters and you'll get a txt file
+                 that has the entire character list. Will limit to 4096 chars or something.
  - [ ] `/unique` - Reply to a message, only shows each character once in order of occurence
- - [ ] `/filter` - Ignore specified characters. Reply with `/filter` and then some sort of syntax,
-                   maybe regex for range. or just all the characters that you dont want, and unicode
-                   escape is allowed. `/filter abcdefghij\x00\u{0001}`
