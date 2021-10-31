@@ -14,6 +14,7 @@ pub const HELP_MESSAGE: &str = "`/about or /start` - Returns a little blurb abou
 `/help` - Returns this message showing all the commands.
 `/raw` - Reply to a message that was interpreted as a command with `/raw` to get that message's \
 breakdown.
+`/filter CHARACTERS` - Reply to a message to break it down while ignoring all given CHARACTERS
 
 All other non-command messages are responded with a breakdown of that message's characters \
 (up to 50 characters).";

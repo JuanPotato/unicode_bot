@@ -78,13 +78,23 @@ async fn run_bot(token: String) {
 async fn handle_message(bot: Bot, msg: Message) {
     if msg.chat.chat_type == ChatType::Private {
         let msg_text = match msg.get_text() {
-            Some(text) => text,
+            // Cloned because otherwise the entire message stays borrowed.
+            Some(text) => text.clone(),
             None => return,
         };
 
-        let msg_parts = msg_text.split_whitespace().collect::<Vec<&str>>();
+        let (cmd, args): (&str, Option<&str>) = {
+            match msg_text.find(|c: char| c.is_ascii_whitespace()) {
+                Some(ix) => {
+                    let (cmd, args) = msg_text.split_at(ix);
+                    (cmd, Some(&args[1..]))
+                }
 
-        match msg_parts[0] {
+                None => (msg_text.as_str(), None),
+            }
+        };
+
+        match cmd {
             "/start" | "/about" => {
                 let mut req = SendMessage::new(msg.chat.id, messages::ABOUT_MESSAGE);
                 req.parse_mode = ParseMode::Markdown;
@@ -121,8 +131,27 @@ async fn handle_message(bot: Bot, msg: Message) {
                 }
             }
 
+            // Filter away certain characters
+            "/filter" => {
+                if let Some(reply) = msg.reply_to_message {
+                    if let Some(reply_text) = reply.get_text() {
+                        if let Some(args) = args {
+                            let reply = get_char_names_filtered(reply_text, args);
+
+                            if !reply.is_empty() {
+                                let mut req = SendMessage::new(msg.chat.id, reply);
+                                req.parse_mode = ParseMode::Markdown;
+                                req.disable_web_page_preview = Some(true);
+
+                                bot.send(&req).await.unwrap();
+                            }
+                        }
+                    }
+                }
+            }
+
             _ => {
-                let mut req = SendMessage::new(msg.chat.id, get_char_names(msg_text));
+                let mut req = SendMessage::new(msg.chat.id, get_char_names(&msg_text));
                 req.parse_mode = ParseMode::Markdown;
                 req.disable_web_page_preview = Some(true);
 
@@ -152,10 +181,27 @@ async fn handle_inline_query(bot: Bot, query: InlineQuery) {
     bot.send(&response).await.unwrap();
 }
 
+#[inline(always)]
 fn get_char_names(string: &str) -> String {
-    let mut text = String::with_capacity(4096); // max telegram message length
+    _get_char_names_filtered(string, None)
+}
 
-    for (i, c) in string.chars().enumerate() {
+#[inline(always)]
+fn get_char_names_filtered(string: &str, filter: &str) -> String {
+    _get_char_names_filtered(string, Some(filter))
+}
+
+fn _get_char_names_filtered(string: &str, filter: Option<&str>) -> String {
+    let mut text = String::with_capacity(4096); // max telegram message length
+    let mut entities = 0;
+
+    for c in string.chars() {
+        if let Some(f) = filter {
+            if f.contains(c) {
+                continue;
+            }
+        }
+
         let name = charname::get_name(c as u32);
 
         let new_part = format!(
@@ -163,9 +209,10 @@ fn get_char_names(string: &str) -> String {
             name,
             val = c as u32
         );
+        entities += 1;
 
         // Don't want to exceed message limit or message entity limit
-        if text.len() + new_part.len() >= 4000 || i >= 50 {
+        if text.len() + new_part.len() >= 4000 || entities > 50 {
             text.push_str("\nYour mesage has been truncated because it was too big");
             break;
         } else {
