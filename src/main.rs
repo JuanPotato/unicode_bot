@@ -8,15 +8,18 @@ use std::io::Read;
 use futures::StreamExt;
 use serde_derive::{Deserialize, Serialize};
 use structopt::StructOpt;
-use tg_botapi::Bot;
 use tg_botapi::methods::{AnswerInlineQuery, SendMessage};
-use tg_botapi::types::{ChatType, InlineQuery, InlineQueryResultArticle, InputTextMessageContent, Message, ParseMode, UpdateType};
+use tg_botapi::types::{
+    ChatType, InlineQuery, InlineQueryResultArticle, InputTextMessageContent, Message, ParseMode,
+    UpdateType,
+};
+use tg_botapi::Bot;
 
 mod messages;
 
 #[derive(Serialize, Deserialize)]
 struct Config {
-    token: String
+    token: String,
 }
 
 #[derive(Debug, StructOpt)]
@@ -37,11 +40,13 @@ async fn main() {
     let token = if args.token.is_some() {
         args.token.unwrap()
     } else {
-        let mut config_file = File::open(args.config_file.unwrap())
-            .expect("Could not open config file");
+        let mut config_file =
+            File::open(args.config_file.unwrap()).expect("Could not open config file");
 
         let mut config_contents = String::new();
-        config_file.read_to_string(&mut config_contents).expect("Could not read config file");
+        config_file
+            .read_to_string(&mut config_contents)
+            .expect("Could not read config file");
 
         let config: Config = toml::from_str(&config_contents).expect("Could not parse config file");
 
