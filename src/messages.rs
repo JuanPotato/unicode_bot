@@ -14,6 +14,7 @@ pub const HELP_MESSAGE: &str = "`/about or /start` - Returns a little blurb abou
 `/help` - Returns this message showing all the commands.
 `/raw` - Reply to a message that was interpreted as a command with `/raw` to get that message's \
 breakdown.
+`/codepoint <codepoint>` - Returns the character at the specified codepoint.
 
 All other non-command messages are responded with a breakdown of that message's characters \
 (up to 50 characters).";
@@ -21,3 +22,7 @@ All other non-command messages are responded with a breakdown of that message's 
 pub const NEED_REPLY_MESSAGE: &str = "You need to reply to a message to use this command.";
 
 pub const NEED_REPLY_TEXT_MESSAGE: &str = "Couldn't find any text in the message you replied to.";
+
+pub const INVALID_CODEPOINT: &str = "Didn't recognise that codepoint.";
+
+pub const NO_CODEPOINT: &str = "You need to specify a codepoint to use this command.";

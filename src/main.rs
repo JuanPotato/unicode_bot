@@ -121,6 +121,33 @@ async fn handle_message(bot: Bot, msg: Message) {
                 }
             }
 
+            "/codepoint" => {
+                if msg_parts.len() > 1 {
+                    let codepoint = msg_parts[1];
+                    let codepoint = codepoint.to_lowercase();
+                    let codepoint = match codepoint.strip_prefix('u') {
+                        Some(c) => c,
+                        None => &codepoint,
+                    };
+
+                    if let Ok(unicode) = u32::from_str_radix(codepoint, 16) {
+                        if let Some(c) = char::from_u32(unicode) {
+                            let req = SendMessage::new(msg.chat.id, c.to_string());
+                            bot.send(&req).await.unwrap();
+                        } else {
+                            let req = SendMessage::new(msg.chat.id, messages::INVALID_CODEPOINT);
+                            bot.send(&req).await.unwrap();
+                        }
+                    } else {
+                        let req = SendMessage::new(msg.chat.id, messages::INVALID_CODEPOINT);
+                        bot.send(&req).await.unwrap();
+                    }
+                } else {
+                    let req = SendMessage::new(msg.chat.id, messages::NO_CODEPOINT);
+                    bot.send(&req).await.unwrap();
+                }
+            }
+
             _ => {
                 let mut req = SendMessage::new(msg.chat.id, get_char_names(msg_text));
                 req.parse_mode = ParseMode::Markdown;
