@@ -108,8 +108,6 @@ async fn handle_message(bot: Bot, msg: Message) {
                     } else {
                         let mut req =
                             SendMessage::new(msg.chat.id, messages::NEED_REPLY_TEXT_MESSAGE);
-                        req.parse_mode = ParseMode::Markdown;
-                        req.disable_web_page_preview = Some(true);
 
                         bot.send(&req).await.unwrap();
                     }
