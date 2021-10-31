@@ -121,8 +121,7 @@ async fn handle_message(bot: Bot, msg: Message) {
 
                         bot.send(&req).await.unwrap();
                     } else {
-                        let req =
-                            SendMessage::new(msg.chat.id, messages::NEED_REPLY_TEXT_MESSAGE);
+                        let req = SendMessage::new(msg.chat.id, messages::NEED_REPLY_TEXT_MESSAGE);
                         bot.send(&req).await.unwrap();
                     }
                 } else {
@@ -147,6 +146,32 @@ async fn handle_message(bot: Bot, msg: Message) {
                             }
                         }
                     }
+                }
+            }
+
+            "/codepoint" => {
+                if let Some(codepoint) = args {
+                    let codepoint = codepoint.to_lowercase();
+                    let codepoint = match codepoint.strip_prefix('u') {
+                        Some(c) => c,
+                        None => &codepoint,
+                    };
+
+                    if let Ok(unicode) = u32::from_str_radix(codepoint, 16) {
+                        if let Some(c) = char::from_u32(unicode) {
+                            let req = SendMessage::new(msg.chat.id, c.to_string());
+                            bot.send(&req).await.unwrap();
+                        } else {
+                            let req = SendMessage::new(msg.chat.id, messages::INVALID_CODEPOINT);
+                            bot.send(&req).await.unwrap();
+                        }
+                    } else {
+                        let req = SendMessage::new(msg.chat.id, messages::INVALID_CODEPOINT);
+                        bot.send(&req).await.unwrap();
+                    }
+                } else {
+                    let req = SendMessage::new(msg.chat.id, messages::NO_CODEPOINT);
+                    bot.send(&req).await.unwrap();
                 }
             }
 

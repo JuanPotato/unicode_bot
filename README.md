@@ -11,6 +11,7 @@ Commands
  - [x] `/raw` - Reply to messages that were parsed as commands to get the characters in them
  - [x] `/filter` - Ignore specified characters. Reply with `/filter` and then a list of characters
                    that you don't want: `/filter abcdefghij`. Case sensitive
+ - [x] `/codepoint <codepoint>` - Returns the character at the specified codepoint.
  - [ ] `/full` - Reply to messages that has more than 50 characters and you'll get a txt file
                  that has the entire character list. Will limit to 4096 chars or something.
  - [ ] `/unique` - Reply to a message, only shows each character once in order of occurence
