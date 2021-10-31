@@ -21,3 +21,6 @@ breakdown.
 All other non-command messages are responded with a breakdown of that message's characters \
 (up to 50 characters).";
 
+pub const NEED_REPLY_MESSAGE: &str = "You need to reply to a message to use this command.";
+
+pub const NEED_REPLY_TEXT_MESSAGE: &str = "Couldn't find any text in the message you replied to.";
