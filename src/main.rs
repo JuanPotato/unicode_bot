@@ -205,7 +205,7 @@ fn _get_char_names_filtered(string: &str, filter: Option<&str>) -> String {
         entities += 1;
 
         // Don't want to exceed message limit or message entity limit
-        if text.len() + new_part.len() >= 4000 || entities >= 50 {
+        if text.len() + new_part.len() >= 4000 || entities > 50 {
             text.push_str("\nYour mesage has been truncated because it was too big");
             break;
         } else {
