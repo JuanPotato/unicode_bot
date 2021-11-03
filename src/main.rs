@@ -78,20 +78,20 @@ async fn run_bot(token: String) {
 async fn handle_message(bot: Bot, msg: Message) {
     if msg.chat.chat_type == ChatType::Private {
         let msg_text = match msg.get_text() {
-            // Cloned because otherwise the entire message stays borrowed.
-            Some(text) => text.clone(),
+            Some(text) => text.as_str(),
             None => return,
         };
 
-        let (cmd, args): (&str, Option<&str>) = {
-            match msg_text.find(|c: char| c.is_ascii_whitespace()) {
-                Some(ix) => {
-                    let (cmd, args) = msg_text.split_at(ix);
-                    (cmd, Some(&args[1..]))
-                }
+        let reply_text_option = if let Some(ref reply) = msg.reply_to_message {
+            reply.get_text()
+        } else {
+            None
+        };
 
-                None => (msg_text.as_str(), None),
-            }
+        let (cmd, args) = if let Some(ix) = msg_text.find(|c: char| c.is_ascii_whitespace()) {
+            (&msg_text[..ix], Some(&msg_text[ix + 1..]))
+        } else {
+            (msg_text, None)
         };
 
         match cmd {
@@ -113,17 +113,12 @@ async fn handle_message(bot: Bot, msg: Message) {
 
             // Reply to a message that was interpreted as a command to get its breakdown
             "/raw" => {
-                if let Some(reply) = msg.reply_to_message {
-                    if let Some(reply_text) = reply.get_text() {
-                        let mut req = SendMessage::new(msg.chat.id, get_char_names(reply_text));
-                        req.parse_mode = ParseMode::Markdown;
-                        req.disable_web_page_preview = Some(true);
+                if let Some(reply_text) = reply_text_option {
+                    let mut req = SendMessage::new(msg.chat.id, get_char_names(reply_text));
+                    req.parse_mode = ParseMode::Markdown;
+                    req.disable_web_page_preview = Some(true);
 
-                        bot.send(&req).await.unwrap();
-                    } else {
-                        let req = SendMessage::new(msg.chat.id, messages::NEED_REPLY_TEXT_MESSAGE);
-                        bot.send(&req).await.unwrap();
-                    }
+                    bot.send(&req).await.unwrap();
                 } else {
                     let req = SendMessage::new(msg.chat.id, messages::NEED_REPLY_MESSAGE);
                     bot.send(&req).await.unwrap();
@@ -132,20 +127,21 @@ async fn handle_message(bot: Bot, msg: Message) {
 
             // Filter away certain characters
             "/filter" => {
-                if let Some(reply) = msg.reply_to_message {
-                    if let Some(reply_text) = reply.get_text() {
-                        if let Some(args) = args {
-                            let reply = get_char_names_filtered(reply_text, args);
+                if let Some(reply_text) = reply_text_option {
+                    if let Some(args) = args {
+                        let reply = get_char_names_filtered(reply_text, args);
 
-                            if !reply.is_empty() {
-                                let mut req = SendMessage::new(msg.chat.id, reply);
-                                req.parse_mode = ParseMode::Markdown;
-                                req.disable_web_page_preview = Some(true);
+                        if !reply.is_empty() {
+                            let mut req = SendMessage::new(msg.chat.id, reply);
+                            req.parse_mode = ParseMode::Markdown;
+                            req.disable_web_page_preview = Some(true);
 
-                                bot.send(&req).await.unwrap();
-                            }
+                            bot.send(&req).await.unwrap();
                         }
                     }
+                } else {
+                    let req = SendMessage::new(msg.chat.id, messages::NEED_REPLY_MESSAGE);
+                    bot.send(&req).await.unwrap();
                 }
             }
 
