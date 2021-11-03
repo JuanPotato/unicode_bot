@@ -150,6 +150,28 @@ async fn handle_message(bot: Bot, msg: Message) {
                 }
             }
 
+            // Break down characters only once
+            "/unique" => {
+                if let Some(reply_text) = reply_text_option {
+                    let mut unique = Vec::with_capacity(64);
+
+                    for c in reply_text.chars() {
+                        // For bounded values of n, the O(n) search of a list is O(1)
+                        if !unique.contains(&c) {
+                            unique.push(c);
+
+                            if unique.len() > 50 {
+                                break;
+                            }
+                        }
+                    }
+
+                    Some(get_char_names(unique.drain(0..)))
+                } else {
+                    Some(messages::NEED_REPLY_MESSAGE.into())
+                }
+            }
+
             // Break down anything else
             _ => Some(get_char_names(msg_text.chars())),
         };
@@ -200,7 +222,7 @@ fn get_char_names(chars: impl Iterator<Item = char>) -> String {
 
         // Don't want to exceed message limit or message entity limit
         if text.len() + new_part.len() >= 4000 || entities > 50 {
-            text.push_str("\nYour mesage has been truncated because it was too big");
+            text.push_str("\nYour message has been truncated because it was too big. Try some of the special commands in /help");
             break;
         } else {
             text.push_str(&new_part);

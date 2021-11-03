@@ -12,9 +12,9 @@ https://github.com/JuanPotato/unicode\\_bot";
 
 pub const HELP_MESSAGE: &str = "`/about or /start` - Returns a little blurb about the bot.
 `/help` - Returns this message showing all the commands.
-`/raw` - Reply to a message that was interpreted as a command with `/raw` to get that message's \
-breakdown.
-`/filter CHARACTERS` - Reply to a message to break it down while ignoring all given CHARACTERS
+`/raw` - Reply to a message that was interpreted as a command to get that message's breakdown.
+`/unique` - Reply to a message to break it down while only listing each character once.
+`/filter CHARACTERS` - Reply to a message to break it down while ignoring all given CHARACTERS.
 `/codepoint <codepoint>` - Returns the character at the specified codepoint.
 
 All other non-command messages are responded with a breakdown of that message's characters \
