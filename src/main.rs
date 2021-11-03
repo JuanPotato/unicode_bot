@@ -102,7 +102,7 @@ async fn handle_message(bot: Bot, msg: Message) {
             // Reply to a message that was interpreted as a command to get its breakdown
             "/raw" => {
                 if let Some(reply_text) = reply_text_option {
-                    Some(get_char_names(reply_text))
+                    Some(get_char_names(reply_text.chars()))
                 } else {
                     Some(messages::NEED_REPLY_MESSAGE.into())
                 }
@@ -112,7 +112,8 @@ async fn handle_message(bot: Bot, msg: Message) {
             "/filter" => {
                 if let Some(reply_text) = reply_text_option {
                     if let Some(args) = args {
-                        let reply = get_char_names_filtered(reply_text, args);
+                        let filtered_chars = reply_text.chars().filter(|&c| !args.contains(c));
+                        let reply = get_char_names(filtered_chars);
 
                         if !reply.is_empty() {
                             Some(reply)
@@ -150,7 +151,7 @@ async fn handle_message(bot: Bot, msg: Message) {
             }
 
             // Break down anything else
-            _ => Some(get_char_names(&msg_text)),
+            _ => Some(get_char_names(msg_text.chars())),
         };
 
         if let Some(s) = response {
@@ -170,7 +171,7 @@ async fn handle_inline_query(bot: Bot, query: InlineQuery) {
 
     let mut response = AnswerInlineQuery::new(query.id, Vec::new());
 
-    let char_names = get_char_names(&query.query);
+    let char_names = get_char_names(query.query.chars());
     let mut content: InputTextMessageContent = char_names.into();
     content.parse_mode = ParseMode::Markdown;
 
@@ -183,27 +184,11 @@ async fn handle_inline_query(bot: Bot, query: InlineQuery) {
     bot.send(&response).await.unwrap();
 }
 
-#[inline(always)]
-fn get_char_names(string: &str) -> String {
-    _get_char_names_filtered(string, None)
-}
-
-#[inline(always)]
-fn get_char_names_filtered(string: &str, filter: &str) -> String {
-    _get_char_names_filtered(string, Some(filter))
-}
-
-fn _get_char_names_filtered(string: &str, filter: Option<&str>) -> String {
+fn get_char_names(chars: impl Iterator<Item = char>) -> String {
     let mut text = String::with_capacity(4096); // max telegram message length
     let mut entities = 0;
 
-    for c in string.chars() {
-        if let Some(f) = filter {
-            if f.contains(c) {
-                continue;
-            }
-        }
-
+    for c in chars {
         let name = charname::get_name(c as u32);
 
         let new_part = format!(
