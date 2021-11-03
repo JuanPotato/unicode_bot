@@ -24,4 +24,10 @@ pub const NEED_REPLY_MESSAGE: &str = "You need to reply to a text message to use
 
 pub const INVALID_CODEPOINT: &str = "Didn't recognise that codepoint.";
 
-pub const NO_CODEPOINT: &str = "You need to specify a codepoint to use this command.";
+pub const NO_CODEPOINT: &str = "You need to specify a codepoint to use this command.
+Example: `/codepoint U+1F954`";
+
+pub const NO_FILTER: &str = "You need to specify a filter to use this command.
+Example: `/filter abcdefghijklmnopqrstuvwxyz`";
+
+pub const FILTER_EXHAUSTIVE: &str = "Your filter removed all the characters in the message.";

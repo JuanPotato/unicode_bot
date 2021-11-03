@@ -94,34 +94,17 @@ async fn handle_message(bot: Bot, msg: Message) {
             (msg_text, None)
         };
 
-        match cmd {
-            "/start" | "/about" => {
-                let mut req = SendMessage::new(msg.chat.id, messages::ABOUT_MESSAGE);
-                req.parse_mode = ParseMode::Markdown;
-                req.disable_web_page_preview = Some(true);
+        let response = match cmd {
+            "/start" | "/about" => Some(messages::ABOUT_MESSAGE.into()),
 
-                bot.send(&req).await.unwrap();
-            }
-
-            "/help" => {
-                let mut req = SendMessage::new(msg.chat.id, messages::HELP_MESSAGE);
-                req.parse_mode = ParseMode::Markdown;
-                req.disable_web_page_preview = Some(true);
-
-                bot.send(&req).await.unwrap();
-            }
+            "/help" => Some(messages::HELP_MESSAGE.into()),
 
             // Reply to a message that was interpreted as a command to get its breakdown
             "/raw" => {
                 if let Some(reply_text) = reply_text_option {
-                    let mut req = SendMessage::new(msg.chat.id, get_char_names(reply_text));
-                    req.parse_mode = ParseMode::Markdown;
-                    req.disable_web_page_preview = Some(true);
-
-                    bot.send(&req).await.unwrap();
+                    Some(get_char_names(reply_text))
                 } else {
-                    let req = SendMessage::new(msg.chat.id, messages::NEED_REPLY_MESSAGE);
-                    bot.send(&req).await.unwrap();
+                    Some(messages::NEED_REPLY_MESSAGE.into())
                 }
             }
 
@@ -132,19 +115,19 @@ async fn handle_message(bot: Bot, msg: Message) {
                         let reply = get_char_names_filtered(reply_text, args);
 
                         if !reply.is_empty() {
-                            let mut req = SendMessage::new(msg.chat.id, reply);
-                            req.parse_mode = ParseMode::Markdown;
-                            req.disable_web_page_preview = Some(true);
-
-                            bot.send(&req).await.unwrap();
+                            Some(reply)
+                        } else {
+                            Some(messages::FILTER_EXHAUSTIVE.into())
                         }
+                    } else {
+                        Some(messages::NO_FILTER.into())
                     }
                 } else {
-                    let req = SendMessage::new(msg.chat.id, messages::NEED_REPLY_MESSAGE);
-                    bot.send(&req).await.unwrap();
+                    Some(messages::NEED_REPLY_MESSAGE.into())
                 }
             }
 
+            // Turn U+1F954 -> :potato:
             "/codepoint" => {
                 if let Some(codepoint) = args {
                     let codepoint = codepoint.to_lowercase();
@@ -153,31 +136,29 @@ async fn handle_message(bot: Bot, msg: Message) {
                         None => &codepoint,
                     };
 
-                    if let Ok(unicode) = u32::from_str_radix(codepoint, 16) {
-                        if let Some(c) = char::from_u32(unicode) {
-                            let req = SendMessage::new(msg.chat.id, c.to_string());
-                            bot.send(&req).await.unwrap();
-                        } else {
-                            let req = SendMessage::new(msg.chat.id, messages::INVALID_CODEPOINT);
-                            bot.send(&req).await.unwrap();
-                        }
+                    let unicode = u32::from_str_radix(codepoint, 16)
+                        .ok()
+                        .and_then(char::from_u32);
+                    if let Some(c) = unicode {
+                        Some(c.to_string())
                     } else {
-                        let req = SendMessage::new(msg.chat.id, messages::INVALID_CODEPOINT);
-                        bot.send(&req).await.unwrap();
+                        Some(messages::INVALID_CODEPOINT.into())
                     }
                 } else {
-                    let req = SendMessage::new(msg.chat.id, messages::NO_CODEPOINT);
-                    bot.send(&req).await.unwrap();
+                    Some(messages::NO_CODEPOINT.into())
                 }
             }
 
-            _ => {
-                let mut req = SendMessage::new(msg.chat.id, get_char_names(&msg_text));
-                req.parse_mode = ParseMode::Markdown;
-                req.disable_web_page_preview = Some(true);
+            // Break down anything else
+            _ => Some(get_char_names(&msg_text)),
+        };
 
-                bot.send(&req).await.unwrap();
-            }
+        if let Some(s) = response {
+            let mut req = SendMessage::new(msg.chat.id, s);
+            req.parse_mode = ParseMode::Markdown;
+            req.disable_web_page_preview = Some(true);
+
+            bot.send(&req).await.unwrap();
         }
     }
 }
