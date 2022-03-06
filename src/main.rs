@@ -2,15 +2,17 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-use futures::StreamExt;
 use tg_botapi::methods::{AnswerInlineQuery, SendMessage};
-use tg_botapi::types::{
-    ChatType, InlineQuery, InlineQueryResultArticle, InputTextMessageContent, Message, ParseMode,
-    UpdateType,
-};
+use tg_botapi::types::{ChatType, InlineQuery, InlineQueryResultArticle, InputTextMessageContent, Message, ParseMode, UpdateType};
 use tg_botapi::Bot;
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 use std::collections::HashMap;
+use std::fs::{File, OpenOptions};
+use std::io::Write;
+use std::time::Duration;
+use chrono::{Datelike, DateTime, DurationRound, Utc};
+use futures::{StreamExt};
+use tokio::select;
 
 mod messages;
 
@@ -27,15 +29,16 @@ async fn main() {
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 enum StatisticAction {
-    Breakdown,
-    StartAbout,
-    Help,
-    Raw,
-    Filter,
-    Codepoint,
-    Unique,
-    BadCmd,
-    Inline,
+    Breakdown = 0,
+    StartAbout = 1,
+    Help = 2,
+    Raw = 3,
+    Filter = 4,
+    Codepoint = 5,
+    Unique = 6,
+    BadCmd = 7,
+    Inline = 8,
+    ActionLength = 9,
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -47,10 +50,25 @@ struct Statistic {
 async fn run_bot(token: String) {
     let bot = Bot::new(token);
 
+    let stats_path = format!("logs/stats_{}.csv", chrono::Utc::now().year());
+    let stats_path = std::path::Path::new(&stats_path);
+    let already_exists = stats_path.exists();
+
+    let mut stats_file = OpenOptions::new()
+        .create(true)
+        .write(true)
+        .append(true)
+        .open(stats_path)
+        .unwrap();
+
+    if !already_exists {
+        writeln!(stats_file, "Hour, Unique Users, Total Msgs, Breakdown, StartAbout, Help, Raw, Filter, Codepoint, Unique, BadCmd, Inline").unwrap();
+    }
+
     let mut updates = bot.start_polling();
 
     let (stat_tx, stat_rx) = tokio::sync::mpsc::unbounded_channel();
-    tokio::spawn(stat_handler(stat_rx));
+    tokio::spawn(stat_handler(bot.clone(), stats_file, stat_rx));
 
     while let Some(update) = updates.next().await {
         match update.update_type {
@@ -66,39 +84,72 @@ async fn run_bot(token: String) {
     }
 }
 
-async fn stat_handler(mut rx: UnboundedReceiver<Statistic>) {
+async fn stat_handler(bot: Bot, mut output: File, mut rx: UnboundedReceiver<Statistic>) {
     let mut action_stats = HashMap::new();
     let mut user_stats = HashMap::new();
-    let mut last_hour = 0;
 
-    println!("Hour, Unique Users, Total Msgs, Breakdown, StartAbout, Help, Raw, Filter, Codepoint, Unique, BadCmd, Inline");
+    let save_period = chrono::Duration::hours(1);
 
-    while let Some(stat) = rx.recv().await {
-        let stat_hour = (chrono::Utc::now().timestamp() / 3600) * 3600;
+    let mut last_hour = chrono::Utc::now().duration_trunc(save_period).unwrap();
+    // let mut last_day = last_hour.duration_trunc(chrono::Duration::days(1)).unwrap();
 
-        if stat_hour != last_hour && last_hour != 0 {
-            let total_unique = user_stats.len();
-            let total_messages = user_stats.values().sum::<i32>();
-            user_stats.clear();
+    let mut tick = Box::pin(tokio::time::sleep(Duration::from_secs(86400 * 365 * 30)));
 
-            let breakdown = action_stats.remove(&StatisticAction::Breakdown).unwrap_or(0);
-            let startabout = action_stats.remove(&StatisticAction::StartAbout).unwrap_or(0);
-            let help = action_stats.remove(&StatisticAction::Help).unwrap_or(0);
-            let raw = action_stats.remove(&StatisticAction::Raw).unwrap_or(0);
-            let filter = action_stats.remove(&StatisticAction::Filter).unwrap_or(0);
-            let codepoint = action_stats.remove(&StatisticAction::Codepoint).unwrap_or(0);
-            let unique = action_stats.remove(&StatisticAction::Unique).unwrap_or(0);
-            let badcmd = action_stats.remove(&StatisticAction::BadCmd).unwrap_or(0);
-            let inline = action_stats.remove(&StatisticAction::Inline).unwrap_or(0);
+    loop {
+        select! {
+            maybe_stat = rx.recv() => {
+                if let Some(stat) = maybe_stat {
+                    let now = chrono::Utc::now();
+                    let stat_hour = now.duration_trunc(save_period).unwrap();
+                    // let stat_day = now.duration_trunc(chrono::Duration::days(1)).unwrap();
 
-            println!("{last_hour}, {total_unique}, {total_messages}, {breakdown}, {startabout}, {help}, {raw}, {filter}, {codepoint}, {unique}, {badcmd}, {inline}");
+                    let time_to_hour = save_period - now.signed_duration_since(stat_hour);
+                    tick = Box::pin(tokio::time::sleep(time_to_hour.to_std().unwrap()));
+
+                    if stat_hour != last_hour {
+                        write_stat_line(&mut output, last_hour, &mut action_stats, &mut user_stats)
+                    }
+
+                    last_hour = stat_hour;
+                    // last_day = stat_day;
+
+                    *action_stats.entry(stat.action).or_insert(0) += 1;
+                    *user_stats.entry(stat.user_id).or_insert(0) += 1;
+                } else {
+                    break;
+                }
+            }
+
+            _ = &mut tick => {
+                write_stat_line(&mut output, last_hour, &mut action_stats, &mut user_stats);
+                tick = Box::pin(tokio::time::sleep(Duration::from_secs(86400 * 365 * 30)));
+            }
         }
-
-        last_hour = stat_hour;
-
-        *action_stats.entry(stat.action).or_insert(0) += 1;
-        *user_stats.entry(stat.user_id).or_insert(0) += 1;
     }
+}
+
+fn write_stat_line(output: &mut File, last_hour: DateTime<Utc>, action_stats: &mut HashMap<StatisticAction, i32>, user_stats: &mut HashMap<i64, i32>) {
+    if user_stats.is_empty() {
+        return;
+    }
+
+    let total_unique = user_stats.len();
+    let total_messages = user_stats.values().sum::<i32>();
+    user_stats.clear();
+
+    let breakdown = action_stats.remove(&StatisticAction::Breakdown).unwrap_or(0);
+    let startabout = action_stats.remove(&StatisticAction::StartAbout).unwrap_or(0);
+    let help = action_stats.remove(&StatisticAction::Help).unwrap_or(0);
+    let raw = action_stats.remove(&StatisticAction::Raw).unwrap_or(0);
+    let filter = action_stats.remove(&StatisticAction::Filter).unwrap_or(0);
+    let codepoint = action_stats.remove(&StatisticAction::Codepoint).unwrap_or(0);
+    let unique = action_stats.remove(&StatisticAction::Unique).unwrap_or(0);
+    let badcmd = action_stats.remove(&StatisticAction::BadCmd).unwrap_or(0);
+    let inline = action_stats.remove(&StatisticAction::Inline).unwrap_or(0);
+
+    writeln!(output, "{last_hour}, {total_unique}, {total_messages}, {breakdown}, {startabout}, {help}, {raw}, {filter}, {codepoint}, {unique}, {badcmd}, {inline}").unwrap();
+    println!("Wrote out");
+    output.flush().unwrap();
 }
 
 struct Response(String, StatisticAction);
