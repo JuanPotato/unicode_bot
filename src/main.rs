@@ -2,12 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-use std::fs::File;
-use std::io::Read;
-
 use futures::StreamExt;
-use serde_derive::{Deserialize, Serialize};
-use structopt::StructOpt;
 use tg_botapi::methods::{AnswerInlineQuery, SendMessage};
 use tg_botapi::types::{
     ChatType, InlineQuery, InlineQueryResultArticle, InputTextMessageContent, Message, ParseMode,
@@ -19,43 +14,15 @@ use std::collections::HashMap;
 
 mod messages;
 
-#[derive(Serialize, Deserialize)]
-struct Config {
-    token: String,
-}
-
-#[derive(Debug, StructOpt)]
-struct CliArgs {
-    /// Telegram bot api token to use
-    #[structopt(long = "token", short = "t", required_unless = "config_file")]
-    token: Option<String>,
-
-    /// Config file that holds the token in toml format
-    #[structopt(long = "config", short = "c", conflicts_with = "token")]
-    config_file: Option<String>,
-}
-
 #[tokio::main]
 async fn main() {
-    let args = CliArgs::from_args();
+    let args = std::env::args().collect::<Vec<String>>();
 
-    let token = if args.token.is_some() {
-        args.token.unwrap()
+    if args.len() == 2 {
+        run_bot(args[1].clone()).await;
     } else {
-        let mut config_file =
-            File::open(args.config_file.unwrap()).expect("Could not open config file");
-
-        let mut config_contents = String::new();
-        config_file
-            .read_to_string(&mut config_contents)
-            .expect("Could not read config file");
-
-        let config: Config = toml::from_str(&config_contents).expect("Could not parse config file");
-
-        config.token
-    };
-
-    run_bot(token).await;
+        eprintln!("USAGE: {} TOKEN", args[0]);
+    }
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
