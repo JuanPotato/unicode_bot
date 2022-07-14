@@ -2,8 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-use tg_botapi::methods::{AnswerInlineQuery, SendMessage};
-use tg_botapi::types::{ChatType, InlineQuery, InlineQueryResultArticle, InputTextMessageContent, Message, ParseMode, UpdateType};
+use tg_botapi::api::{AnswerInlineQuery, InlineQuery, InlineQueryResultArticle, InputTextMessageContent, Message, ParseMode, UpdateType};
 use tg_botapi::Bot;
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 use std::collections::HashMap;
@@ -155,7 +154,7 @@ fn write_stat_line(output: &mut File, last_hour: DateTime<Utc>, action_stats: &m
 struct Response(String, StatisticAction);
 
 async fn handle_message(bot: Bot, msg: Message, stat_tx: UnboundedSender<Statistic>) {
-    if msg.chat.chat_type == ChatType::Private {
+    if msg.chat.type_ == "private" {
         let msg_text = match msg.get_text() {
             Some(text) => text.as_str(),
             None => return,
@@ -258,9 +257,10 @@ async fn handle_message(bot: Bot, msg: Message, stat_tx: UnboundedSender<Statist
             _ => Response(get_char_names(msg_text.chars()), Breakdown),
         };
 
-        let mut req = SendMessage::new(msg.chat.id, response);
-        req.parse_mode = ParseMode::Markdown;
-        req.disable_web_page_preview = Some(true);
+        let req = msg
+            .reply(response)
+            .with_parse_mode(ParseMode::MarkdownOld)
+            .with_disable_web_page_preview(true);
 
         bot.send(&req).await.unwrap();
 
@@ -276,10 +276,10 @@ async fn handle_inline_query(bot: Bot, query: InlineQuery, stat_tx: UnboundedSen
     let mut response = AnswerInlineQuery::new(query.id, Vec::new());
 
     let char_names = get_char_names(query.query.chars());
-    let mut content: InputTextMessageContent = char_names.into();
-    content.parse_mode = ParseMode::Markdown;
+    let content = InputTextMessageContent::new(char_names)
+        .with_parse_mode(ParseMode::MarkdownOld);
 
-    response.add(InlineQueryResultArticle::new("ID", query.query, content));
+    response.results.push(InlineQueryResultArticle::new("ID".into(), query.query, content.into()).into());
 
     response.cache_time = Some(0);
 
