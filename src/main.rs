@@ -259,7 +259,7 @@ async fn handle_message(bot: Bot, msg: Message, stat_tx: UnboundedSender<Statist
 
         let req = msg
             .reply(response)
-            .with_parse_mode(ParseMode::MarkdownOld)
+            .with_parse_mode(ParseMode::Markdown)
             .with_disable_web_page_preview(true);
 
         bot.send(&req).await.unwrap();
@@ -277,7 +277,7 @@ async fn handle_inline_query(bot: Bot, query: InlineQuery, stat_tx: UnboundedSen
 
     let char_names = get_char_names(query.query.chars());
     let content = InputTextMessageContent::new(char_names)
-        .with_parse_mode(ParseMode::MarkdownOld);
+        .with_parse_mode(ParseMode::Markdown);
 
     response.results.push(InlineQueryResultArticle::new("ID".into(), query.query, content.into()).into());
 
