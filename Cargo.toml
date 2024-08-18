@@ -7,6 +7,6 @@ edition = "2021"
 [dependencies]
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "sync"] }
 futures = "0.3"
-charname = "0.2"
+charname = "1"
 tg_botapi = "0.10.0"
 chrono = "0.4.23"
