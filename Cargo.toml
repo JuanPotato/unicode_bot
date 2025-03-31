@@ -1,8 +1,8 @@
 [package]
 name = "unicode_bot"
-version = "0.2.0"
-authors = ["Hasan Ibraheem <hasantiny@gmail.com>"]
-edition = "2021"
+version = "0.3.0"
+authors = ["Hasan Ibraheem <hasan@juanpota.to>"]
+edition = "2024"
 
 [dependencies]
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "sync"] }
