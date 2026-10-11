@@ -1,11 +1,12 @@
 ## Unicode Info Bot ([@UnicodeInfoBot](https://t.me/UnicodeInfoBot))
 
-This is a neat little telegram bot that I made that tells you all the characters in your message.
+This is a neat little telegram bot that I made that tells you all the characters in your message. It runs on cloudflare workers.
 
 ![Example screenshot](https://user-images.githubusercontent.com/9531780/67625841-6ab6ad00-f811-11e9-9d8d-77c04dc6fcb3.png)
 
 Commands
  - [x] Send any text and it will tell you the characters in it
+ - [x] Inline queries, same thing as above
  - [x] `/about, /start` - Tells the user about what the bot can do
  - [x] `/help` - Show a list of commands
  - [x] `/raw` - Reply to messages that were parsed as commands to get the characters in them

@@ -1,0 +1,11 @@
+name = "unicode-bot"
+main = "build/worker/shim.mjs"
+compatibility_date = "2024-10-01"
+
+[build]
+command = "export PATH=\"$HOME/.cargo/bin:$PATH\" && (which worker-build >/dev/null 2>&1 || cargo install -q worker-build) && worker-build --release"
+
+[[rules]]
+globs = ["**/*.wasm"]
+type = "CompiledWasm"
+fallthrough = false

@@ -1,0 +1,15 @@
+{
+  "name": "unicode-bot",
+  "version": "0.4.0",
+  "description": "Unicode Info Telegram Bot deployed on Cloudflare Workers",
+  "private": true,
+  "scripts": {
+    "build": "worker-build --release",
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "test": "cargo test"
+  },
+  "devDependencies": {
+    "wrangler": "^4.149.0"
+  }
+}
